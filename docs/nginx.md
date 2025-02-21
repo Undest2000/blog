@@ -556,3 +556,7 @@ location /ogfinan{
     try_files /maintenance.html =404;#假设文件名为maintenance.html
 }
 ```
+
+## 常用的匹配规则
+
+![常用的匹配规则](/nginx_match.png)
