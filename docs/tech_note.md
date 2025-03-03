@@ -2270,3 +2270,26 @@ UE.I18N['zh-cn'] = {
 ```js
 document.documentElement.innerHTML = document.documentElement.innerHTML;
 ```
+
+## 22、对象数组按照key进行分组
+
+```js
+const items = [
+    { id: 1, name: 'fruits' },
+    { id: 2, name: 'animals' },
+    { id: 3, name: 'fruits' },
+]
+const keys = Object.keys(items[0]);
+const result = keys.map(v => {
+    return items.map(val => {
+        return {
+            [v]: val[v]
+        }
+    })
+})
+console.log(result);
+/**result = [
+[{ id: 1 }, { id: 2 }, { id: 3 }]，
+  [({ name: 'fruits' }, { name: 'animals' }, { name: 'fruits' })]
+];*/
+```

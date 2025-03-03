@@ -65,6 +65,12 @@ export default defineConfig(
           items: [
             { text: 'MYSQL', link: '/mysql' },
           ]
+        },
+        {
+          text: 'Spring',
+          items: [
+            { text: 'Spring', link: '/spring' },
+          ]
         }
       ],
 
