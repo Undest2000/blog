@@ -2293,3 +2293,89 @@ console.log(result);
   [({ name: 'fruits' }, { name: 'animals' }, { name: 'fruits' })]
 ];*/
 ```
+
+## 23、手动通过事务上下文控制连接池连接归还导致的"connetion holder is null"问题
+
+```java
+TransactionContext xxTc = new TransactionContext(DBConnectionManager.DB_POOL_XX);
+ScheduledTaskLogDao taskLogDao = new ScheduledTaskLogDao(xxTc);
+taskLogDao.saveScheduledTaskLog(taskLog);
+//下面是很耗时的操作
+...
+taskLogDao.updateScheduledTaskLog(taskLog);//这里会报错"connetion holder is null"!
+```
+
+原因是因为druid连接池设置了
+```properties
+removeAbandoned=true
+removeAbandonedTimeout=1800
+```
+耗时操作导致未执行完SQL的连接未被回收超时而被强制回收了,下面的数据库操作就没有连接可用了
+解决办法:
+```java
+//如果执行目标方法时间太久数据库连接已经被回收，重新获取数据库连接
+if (!isConnectionValid(xxTc.getConnection())) {
+    // 确保数据库连接关闭
+    if (!xx.isClosed()) {
+        try {
+            xxTc.close();
+        } catch (SQLException e) {
+            logger.error("关闭数据库连接出错", e);
+        }
+    }
+    xxTc = new TransactionContext(DBConnectionManager.DB_POOL_XX);
+    taskLogDao = new ScheduledTaskLogDao(xxTc);
+}
+
+/**
+ * 检查连接是否有效
+ */
+private boolean isConnectionValid(DruidPooledConnection pooledConn) {
+    try {
+        if (pooledConn != null) {
+            // 使用validationQuery检查连接有效性
+            return pooledConn.isValid(1); // 1秒超时
+        } else {
+            return false;
+        }
+    } catch (Exception e) {
+        return false;
+    }
+}
+```
+
+## 24、nginx、tomcat、druid、mysql连接数配置
+
+1. nginx配置:nginx.conf
+```conf
+worker_processes 1; # 设置最大工作进程数
+events {
+worker_connections 1024; # 每个工作进程允许的最大连接数
+}
+```
+
+2. tomcat配置:server.xml
+```xml
+<Connector port="8080" protocol="HTTP/1.1"
+connectionTimeout="50000"
+redirectPort="8443" 
+maxThreads="200" 最大连接线程数 默认200
+acceptCount="300" 等待请求数
+connectionTimeout="20000" 连接超时时间
+/>
+```
+
+3. druid配置:dbconfig_zs.properties
+```properties
+maxActive=300 最大连接数
+initialSize=1 初始化连接数
+maxWait=60000 最大等待连接时间
+minIdle=10 最小空闲连接数
+maxIdle=15 最大空闲连接数
+```
+
+4. mysql配置:my.cnf
+在[mysqld]下:
+```cnf
+max_connections=1000 默认151
+```
