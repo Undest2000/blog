@@ -71,6 +71,12 @@ export default defineConfig(
           items: [
             { text: 'Spring', link: '/spring' },
           ]
+        },
+        {
+          text: 'k8s',
+          items: [
+            { text: 'k8s', link: '/k8s' },
+          ]
         }
       ],
 
