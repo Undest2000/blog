@@ -22,7 +22,7 @@ jobs:
         run: npm ci  # 精确安装依赖
 
       - name: Build project
-        run: npm run docs:build  # 编译 Vitepress，生成 dist 目录
+        run: npm run build  # 编译 Vitepress，生成 dist 目录
 
       - name: Deploy to release branch
         uses: peaceiris/actions-gh-pages@v3  # 专用于推送构建产物到分支
