@@ -617,7 +617,7 @@ if (!registerComCreditInfoQueryEventEvents.isEmpty()) {
 
 ![](/2022-06-15-09-38-29-image.png)
 
-<img title="" src="file:///C:/Users/fengying/AppData/Roaming/marktext/images/2022-06-15-09-39-26-image.png" alt="" width="839">
+![](/2022-06-15-09-39-26-image.png)
 
 ```java
 //1、获取SecurityManager工厂，此处使用Ini配置文件初始化SecurityManager     
