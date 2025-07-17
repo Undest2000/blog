@@ -2347,7 +2347,7 @@ private boolean isConnectionValid(DruidPooledConnection pooledConn) {
 ## 24、nginx、tomcat、druid、mysql连接数配置
 
 1. nginx配置:nginx.conf
-```conf
+```properties
 worker_processes 1; # 设置最大工作进程数
 events {
 worker_connections 1024; # 每个工作进程允许的最大连接数
@@ -2376,6 +2376,7 @@ maxIdle=15 最大空闲连接数
 
 4. mysql配置:my.cnf
 在[mysqld]下:
-```cnf
+```properties
 max_connections=1000 默认151
 ```
+:joy:
