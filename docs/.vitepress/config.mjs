@@ -77,6 +77,12 @@ export default defineConfig(
           items: [
             { text: 'k8s', link: '/k8s' },
           ]
+        },
+        {
+          text: 'Java基础',
+          items: [
+            { text: 'Java基础', link: '/java_base' },
+          ]
         }
       ],
 
