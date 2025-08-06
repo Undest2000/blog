@@ -1,0 +1,1 @@
+import{_ as s,c as i,o as a,a4 as n}from"./chunks/framework.DccHFOw4.js";const F=JSON.parse('{"title":"CSS相关","description":"","frontmatter":{},"headers":[],"relativePath":"css.md","filePath":"css.md"}'),t={name:"css.md"},h=n("",26),l=[h];function k(p,E,e,r,d,g){return a(),i("div",null,l)}const o=s(t,[["render",k]]);export{F as __pageData,o as default};

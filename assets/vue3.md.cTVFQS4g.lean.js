@@ -1,0 +1,1 @@
+import{_ as s,c as i,o as a,a4 as n}from"./chunks/framework.DccHFOw4.js";const o=JSON.parse('{"title":"vue3的笔记","description":"","frontmatter":{},"headers":[],"relativePath":"vue3.md","filePath":"vue3.md"}'),h={name:"vue3.md"},p=n("",19),t=[p];function k(l,e,E,r,d,g){return a(),i("div",null,t)}const F=s(h,[["render",k]]);export{o as __pageData,F as default};
