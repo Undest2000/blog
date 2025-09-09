@@ -2380,3 +2380,185 @@ maxIdle=15 最大空闲连接数
 max_connections=1000 默认151
 ```
 :joy:
+
+## 25、手写一个Mybatis防全表更新/删除的插件
+```java
+package com.fh.plugin;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Properties;
+
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.Parenthesis;
+import net.sf.jsqlparser.expression.StringValue;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
+import net.sf.jsqlparser.expression.operators.relational.MinorThan;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.update.Update;
+import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
+import org.apache.ibatis.executor.statement.StatementHandler;
+import org.apache.ibatis.mapping.BoundSql;
+import org.apache.ibatis.plugin.Interceptor;
+import org.apache.ibatis.plugin.Intercepts;
+import org.apache.ibatis.plugin.Invocation;
+import org.apache.ibatis.plugin.Plugin;
+import org.apache.ibatis.plugin.Signature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * 阻止全表更新或删除的mybatis插件，JDK7下使用
+ * 如有条件建议升级到JDK8,使用Mybatis-Plus的BlockAttackInnerInterceptor插件（已经过测试可行）
+ *
+ * @author Undest
+ * @date 2025-09-09 11:16:16
+ */
+@Intercepts({
+		@Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class})
+})
+public class BlockFullTablePlugin implements Interceptor {
+
+	private static final Logger log = LoggerFactory.getLogger(BlockFullTablePlugin.class);
+
+	@Override
+	public Object intercept(Invocation invocation) throws Throwable {
+		StatementHandler statementHandler = (StatementHandler) invocation.getTarget();
+		BoundSql boundSql = statementHandler.getBoundSql();
+		String sql = boundSql.getSql();
+		try {
+			Statement statement = CCJSqlParserUtil.parse(sql);
+			//只有更新和删除操作需要检查
+			if (statement instanceof Update || statement instanceof Delete) {
+				checkStatement(statement, sql);
+			}
+		} catch (JSQLParserException e) {
+			//语句解析不了的情况不要拦截下来以免影响业务执行，需要做好后备处理,这里先记录下来日志以便排查
+			log.error("JSQLParser解析失败，SQL:【{}】", sql, e);
+		}
+		return invocation.proceed();
+	}
+
+	@Override
+	public Object plugin(Object target) {
+		return Plugin.wrap(target, this);
+	}
+
+	@Override
+	public void setProperties(Properties properties) {
+	}
+
+	protected void checkStatement(Statement statement, String originalSql) throws SQLException {
+		Expression where = null;
+		if (statement instanceof Update) {
+			Update update = (Update) statement;
+			where = update.getWhere();
+		} else if (statement instanceof Delete) {
+			Delete delete = (Delete) statement;
+			where = delete.getWhere();
+		}
+		// 1. 检查是否有WHERE条件
+		if (where == null) {
+			throw new SQLException("非法SQL，更新或删除操作时where条件为空，SQL:【" + originalSql + "】");
+		}
+		// 2. 检查WHERE条件是否为永真
+		if (isAlwaysTrueExpression(where)) {
+			throw new SQLException("非法SQL，更新或删除操作时where条件为永真，SQL:【" + originalSql + "】");
+		}
+	}
+
+	/**
+	 * 判断表达式是否为永真
+	 * 各个if分支上注释的表达式均测试通过
+	 * 因为JDK7最高支持的jsqlparser版本为2.1，可能无法覆盖所有永真情况
+	 */
+	private boolean isAlwaysTrueExpression(Expression expression) {
+		if (expression == null) {
+			return false;
+		}
+
+		//处理括号里的表达式：例如(1<2) (1<2 or a.id=a.id)
+		if (expression instanceof Parenthesis) {
+			Parenthesis parenthesis = (Parenthesis) expression;
+			return isAlwaysTrueExpression(parenthesis.getExpression()); // 递归检查括号内的内容
+		}
+
+		// 处理等值表达式：例如 1=1, id=id
+		if (expression instanceof EqualsTo) {
+			EqualsTo equalsTo = (EqualsTo) expression;
+			return isSameExpression(equalsTo.getLeftExpression(), equalsTo.getRightExpression());
+		}
+
+		// 处理 OR 表达式：例如 WHERE 1=1 OR id=1
+		if (expression instanceof OrExpression) {
+			OrExpression orExpression = (OrExpression) expression;
+			return isAlwaysTrueExpression(orExpression.getLeftExpression()) ||
+					isAlwaysTrueExpression(orExpression.getRightExpression());
+		}
+
+		// 处理 AND 表达式：例如 WHERE 1=1 AND id=id
+		if (expression instanceof AndExpression) {
+			AndExpression andExpression = (AndExpression) expression;
+			return isAlwaysTrueExpression(andExpression.getLeftExpression()) &&
+					isAlwaysTrueExpression(andExpression.getRightExpression());
+		}
+
+		// 处理大于、小于等，但需要确保比较是永真 例如 2>1 1<2
+		if (expression instanceof GreaterThan) {
+			GreaterThan gt = (GreaterThan) expression;
+			return isAlwaysTrueComparison(gt.getLeftExpression(), gt.getRightExpression(), ">");
+		}
+		if (expression instanceof MinorThan) {
+			MinorThan lt = (MinorThan) expression;
+			return isAlwaysTrueComparison(lt.getLeftExpression(), lt.getRightExpression(), "<");
+		}
+		return false;
+	}
+
+	/**
+	 * 判断两个表达式是否相同（可能为永真条件）
+	 */
+	private boolean isSameExpression(Expression left, Expression right) {
+		// 都是长整型值
+		if (left instanceof LongValue && right instanceof LongValue) {
+			return ((LongValue) left).getValue() == ((LongValue) right).getValue();
+		}
+		// 都是字符串值
+		if (left instanceof StringValue && right instanceof StringValue) {
+			return ((StringValue) left).getValue().equals(((StringValue) right).getValue());
+		}
+		if (left != null && right != null) {
+			return left.toString().equals(right.toString());
+		}
+		return false;
+	}
+
+	/**
+	 * 判断比较表达式是否可能永真（简易版，针对数值比较）
+	 */
+	private boolean isAlwaysTrueComparison(Expression left, Expression right, String operator) {
+		// 主要处理LongValue类型的比较
+		try {
+			if (left instanceof LongValue && right instanceof LongValue) {
+				long leftVal = ((LongValue) left).getValue();
+				long rightVal = ((LongValue) right).getValue();
+				if (">".equals(operator)) {
+					return leftVal > rightVal;
+				} else if ("<".equals(operator)) {
+					return leftVal < rightVal;
+				}
+				// 这里可以扩展其他操作符
+			}
+		} catch (Exception e) {
+			log.error(e.toString(), e);
+		}
+		return false;
+	}
+}
+```
