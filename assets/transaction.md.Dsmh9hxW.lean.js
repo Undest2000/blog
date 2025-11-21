@@ -1,0 +1,1 @@
+import{_ as s,c as i,o as a,a4 as n}from"./chunks/framework.DccHFOw4.js";const F=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"transaction.md","filePath":"transaction.md"}'),h={name:"transaction.md"},k=n("",21),t=[k];function p(l,E,e,r,d,g){return a(),i("div",null,t)}const c=s(h,[["render",p]]);export{F as __pageData,c as default};

@@ -1,0 +1,1 @@
+import{_ as s,c as a,o as i,a4 as t}from"./chunks/framework.DccHFOw4.js";const u=JSON.parse('{"title":"Linux的一些命令","description":"","frontmatter":{},"headers":[],"relativePath":"linux.md","filePath":"linux.md"}'),e={name:"linux.md"},n=t("",6),h=[n];function l(p,o,r,d,c,k){return i(),a("div",null,h)}const _=s(e,[["render",l]]);export{u as __pageData,_ as default};

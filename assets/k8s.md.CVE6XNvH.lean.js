@@ -1,0 +1,1 @@
+import{_ as s,c as i,o as a,a4 as n}from"./chunks/framework.DccHFOw4.js";const g=JSON.parse('{"title":"MiniKube","description":"","frontmatter":{},"headers":[],"relativePath":"k8s.md","filePath":"k8s.md"}'),e={name:"k8s.md"},h=n("",22),t=[h];function l(k,p,r,d,F,o){return a(),i("div",null,t)}const y=s(e,[["render",l]]);export{g as __pageData,y as default};

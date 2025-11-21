@@ -1,0 +1,1 @@
+import{_ as s,c as i,o as a,a4 as n,a5 as l}from"./chunks/framework.DccHFOw4.js";const y=JSON.parse('{"title":"Nginx","description":"","frontmatter":{},"headers":[],"relativePath":"nginx.md","filePath":"nginx.md"}'),p={name:"nginx.md"},t=n("",64),h=[t];function e(k,r,E,d,g,o){return a(),i("div",null,h)}const u=s(p,[["render",e]]);export{y as __pageData,u as default};
