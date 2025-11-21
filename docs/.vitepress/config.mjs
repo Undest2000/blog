@@ -83,6 +83,12 @@ export default defineConfig(
           items: [
             { text: 'Java基础', link: '/java_base' },
           ]
+        },
+        {
+          text: 'docker',
+          items: [
+            { text: 'docker相关', link: '/docker' },
+          ]
         }
       ],
 
